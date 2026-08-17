@@ -20,4 +20,8 @@ public class SecurityEventService {
     public SecurityEvent saveEvent(SecurityEvent event) {
         return repository.save(event);
     }
+
+    public SecurityEvent getEventById(Long id) {
+        return repository.findById(id).orElse(null);
+    }
 }

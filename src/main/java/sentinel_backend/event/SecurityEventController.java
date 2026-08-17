@@ -5,6 +5,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.List;
 
@@ -24,7 +26,13 @@ public class SecurityEventController {
     }
 
     @PostMapping
-    public SecurityEvent createEvent(@RequestBody SecurityEvent event) {
+    public SecurityEvent createEvent(@Valid @RequestBody SecurityEvent event) {
         return service.saveEvent(event);
     }
+
+    @GetMapping("/{id}")
+    public SecurityEvent getEventById(@PathVariable Long id) {
+        return service.getEventById(id);
+    }
+
 }

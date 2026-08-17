@@ -1,10 +1,16 @@
 package sentinel_backend.event;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import java.time.Instant;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 
 @Entity
 public class SecurityEvent {
@@ -13,12 +19,24 @@ public class SecurityEvent {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotBlank
     private String source;
-    private String eventType;
-    private String severity;
+
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    private EventType eventType;
+
+    @Enumerated(EnumType.STRING)
+    @NotNull
+    private Severity severity;
+
+    @NotBlank
     private String message;
-    private String ipAddress;
+
+    @NotNull
     private Instant timestamp;
+
+    private String ipAddress;
 
     public SecurityEvent() {
         this.timestamp = Instant.now();
@@ -40,19 +58,19 @@ public class SecurityEvent {
         this.source = source;
     }
 
-    public String getEventType() {
+    public EventType getEventType() {
         return eventType;
     }
 
-    public void setEventType(String eventType) {
+    public void setEventType(EventType eventType) {
         this.eventType = eventType;
     }
 
-    public String getSeverity() {
+    public Severity getSeverity() {
         return severity;
     }
 
-    public void setSeverity(String severity) {
+    public void setSeverity(Severity severity) {
         this.severity = severity;
     }
 
@@ -73,10 +91,11 @@ public class SecurityEvent {
     }
 
     public Instant getTimestamp() {
-    return timestamp;
+        return timestamp;
     }
 
-public void setTimestamp(Instant timestamp) {
-    this.timestamp = timestamp;
-}
+    public void setTimestamp(Instant timestamp) {
+        this.timestamp = timestamp;
+    }
+
 }
