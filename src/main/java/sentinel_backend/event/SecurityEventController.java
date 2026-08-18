@@ -51,11 +51,11 @@ public class SecurityEventController {
     }
 
     @PostMapping
-public SecurityEventResponse createEvent(
-        @Valid @RequestBody SecurityEventRequest request) {
+    public SecurityEventResponse createEvent(
+            @Valid @RequestBody SecurityEventRequest request) {
 
-    return service.saveEvent(request);
-}
+        return service.saveEvent(request);
+    }
 
     @GetMapping("/{id}")
     public SecurityEventResponse getEventById(@PathVariable Long id) {
@@ -68,32 +68,29 @@ public SecurityEventResponse createEvent(
     }
 
     @PutMapping("/{id}")
-public SecurityEventResponse updateEvent(
-        @PathVariable Long id,
-        @Valid @RequestBody SecurityEventRequest request) {
+    public SecurityEventResponse updateEvent(
+            @PathVariable Long id,
+            @Valid @RequestBody SecurityEventRequest request) {
 
-    return service.updateEvent(id, request);
-}
+        return service.updateEvent(id, request);
+    }
 
     @GetMapping("/page")
-public Page<SecurityEventResponse> getEventsPage(
-        @RequestParam(defaultValue = "0") int page,
-        @RequestParam(defaultValue = "20") int size) {
+    public Page<SecurityEventResponse> getEventsPage(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
 
+        if (page < 0) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Page must be 0 or greater");
+        }
 
-    if (page < 0) {
-        throw new ResponseStatusException(
-                HttpStatus.BAD_REQUEST,
-                "Page must be 0 or greater"
-        );
+        if (size < 1 || size > 100) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Size must be between 1 and 100");
+        }
+        return service.getEventsPage(page, size);
     }
-
-    if (size < 1 || size > 100) {
-        throw new ResponseStatusException(
-                HttpStatus.BAD_REQUEST,
-                "Size must be between 1 and 100"
-        );
-    }
-    return service.getEventsPage(page, size);
-}
 }
