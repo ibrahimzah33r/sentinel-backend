@@ -4,20 +4,26 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import sentinel_backend.event.SecurityEventRepository.SecurityEventResponse;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import sentinel_backend.alert.AlertWebhookClient;
 
 @Service
 public class SecurityEventService {
 
     private final SecurityEventRepository repository;
+    private final AlertWebhookClient alertWebhookClient;
+    private static final Logger logger = LoggerFactory.getLogger(SecurityEventService.class);
 
-    public SecurityEventService(SecurityEventRepository repository) {
+    public SecurityEventService(
+            SecurityEventRepository repository,
+            AlertWebhookClient alertWebhookClient) {
         this.repository = repository;
+        this.alertWebhookClient = alertWebhookClient;
     }
 
     public List<SecurityEventResponse> getAllEvents() {
@@ -27,15 +33,23 @@ public class SecurityEventService {
                 .toList();
     }
 
-    public SecurityEvent saveEvent(SecurityEvent event) {
-        return repository.save(event);
-    }
-
     public SecurityEventResponse saveEvent(SecurityEventRequest request) {
         SecurityEvent event = fromRequest(request);
         SecurityEvent savedEvent = repository.save(event);
+        SecurityEventResponse response = toResponse(savedEvent);
 
-        return toResponse(savedEvent);
+        logger.info(
+                "Security event created: id={}, type={}, severity={}, source={}",
+                savedEvent.getId(),
+                savedEvent.getEventType(),
+                savedEvent.getSeverity(),
+                savedEvent.getSource());
+
+        if (savedEvent.getSeverity() == Severity.CRITICAL) {
+            alertWebhookClient.sendCriticalAlert(response);
+        }
+
+        return response;
     }
 
     public void deleteEvent(Long id) {
@@ -103,15 +117,15 @@ public class SecurityEventService {
     }
 
     public Page<SecurityEventResponse> getEventsPage(int page, int size) {
-    PageRequest pageRequest = PageRequest.of(
-            page,
-            size,
-            Sort.by("timestamp").descending()
-    );
+        PageRequest pageRequest = PageRequest.of(
+                page,
+                size,
+                Sort.by("timestamp").descending());
 
-    return repository.findAll(pageRequest)
-            .map(this::toResponse);
-}
+        return repository.findAll(pageRequest)
+                .map(this::toResponse);
+    }
+
     private SecurityEventResponse toResponse(SecurityEvent event) {
         return new SecurityEventResponse(
                 event.getId(),
@@ -134,4 +148,5 @@ public class SecurityEventService {
 
         return event;
     }
+
 }

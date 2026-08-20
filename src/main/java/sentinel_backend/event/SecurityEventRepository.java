@@ -25,13 +25,4 @@ public interface SecurityEventRepository extends JpaRepository<SecurityEvent, Lo
                         Severity severity,
                         EventType eventType);
 
-        public record SecurityEventResponse(
-                        Long id,
-                        String source,
-                        EventType eventType,
-                        Severity severity,
-                        String message,
-                        String ipAddress,
-                        Instant timestamp) {
-        }
 }

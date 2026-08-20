@@ -7,7 +7,6 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
-import sentinel_backend.event.SecurityEventRepository.SecurityEventResponse;
 import tools.jackson.databind.json.JsonMapper;
 import org.springframework.context.annotation.Import;
 import sentinel_backend.TestContainersConfig;
@@ -20,246 +19,296 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.is;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+
+import sentinel_backend.alert.AlertWebhookClient;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.verify;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @Import(TestContainersConfig.class)
 class SecurityEventControllerTests {
 
-    @Autowired
-    private MockMvc mockMvc;
+        @Autowired
+        private MockMvc mockMvc;
 
-    @Autowired
-    private JsonMapper jsonMapper;
+        @Autowired
+        private JsonMapper jsonMapper;
 
-    private SecurityEventResponse createEvent(
-            String source,
-            EventType eventType,
-            Severity severity,
-            String message) throws Exception {
+        @MockitoBean
+        private AlertWebhookClient alertWebhookClient;
 
-        SecurityEventRequest request = new SecurityEventRequest(
-                source,
-                eventType,
-                severity,
-                message,
-                null);
+        private SecurityEventResponse createEvent(
+                        String source,
+                        EventType eventType,
+                        Severity severity,
+                        String message) throws Exception {
 
-        String response = mockMvc.perform(post("/api/events")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(jsonMapper.writeValueAsString(request)))
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
+                SecurityEventRequest request = new SecurityEventRequest(
+                                source,
+                                eventType,
+                                severity,
+                                message,
+                                null);
 
-        return jsonMapper.readValue(response, SecurityEventResponse.class);
-    }
+                String response = mockMvc.perform(post("/api/events")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(jsonMapper.writeValueAsString(request)))
+                                .andReturn()
+                                .getResponse()
+                                .getContentAsString();
 
-    @Test
-    void shouldCreateSecurityEvent() throws Exception {
-        SecurityEventRequest request = new SecurityEventRequest(
-                "test-server",
-                EventType.FAILED_LOGIN,
-                Severity.HIGH,
-                "Repeated failed login attempts",
-                "192.168.1.100");
+                return jsonMapper.readValue(response, SecurityEventResponse.class);
+        }
 
-        mockMvc.perform(post("/api/events")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(jsonMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.source").value("test-server"))
-                .andExpect(jsonPath("$.severity").value("HIGH"))
-                .andExpect(jsonPath("$.id").exists());
-    }
+        @Test
+        void shouldCreateSecurityEvent() throws Exception {
+                SecurityEventRequest request = new SecurityEventRequest(
+                                "test-server",
+                                EventType.FAILED_LOGIN,
+                                Severity.HIGH,
+                                "Repeated failed login attempts",
+                                "192.168.1.100");
 
-    @Test
-    void shouldRejectInvalidSecurityEvent() throws Exception {
-        SecurityEventRequest request = new SecurityEventRequest(
-                "",
-                null,
-                null,
-                "",
-                null);
+                mockMvc.perform(post("/api/events")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(jsonMapper.writeValueAsString(request)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.source").value("test-server"))
+                                .andExpect(jsonPath("$.severity").value("HIGH"))
+                                .andExpect(jsonPath("$.id").exists());
+        }
 
-        mockMvc.perform(post("/api/events")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(jsonMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Validation failed"))
-                .andExpect(jsonPath("$.validationErrors.source").exists())
-                .andExpect(jsonPath("$.validationErrors.eventType").exists())
-                .andExpect(jsonPath("$.validationErrors.severity").exists())
-                .andExpect(jsonPath("$.validationErrors.message").exists());
-    }
+        @Test
+        void shouldRejectInvalidSecurityEvent() throws Exception {
+                SecurityEventRequest request = new SecurityEventRequest(
+                                "",
+                                null,
+                                null,
+                                "",
+                                null);
 
-    @Test
+                mockMvc.perform(post("/api/events")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(jsonMapper.writeValueAsString(request)))
+                                .andExpect(status().isBadRequest())
+                                .andExpect(jsonPath("$.message").value("Validation failed"))
+                                .andExpect(jsonPath("$.validationErrors.source").exists())
+                                .andExpect(jsonPath("$.validationErrors.eventType").exists())
+                                .andExpect(jsonPath("$.validationErrors.severity").exists())
+                                .andExpect(jsonPath("$.validationErrors.message").exists());
+        }
 
-    void shouldGetSecurityEventById() throws Exception {
-        SecurityEventRequest request = new SecurityEventRequest(
-                "test-server",
-                EventType.FAILED_LOGIN,
-                Severity.HIGH,
-                "Repeated failed login attempts",
-                "192.168.1.100");
+        @Test
 
-        String response = mockMvc.perform(post("/api/events")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(jsonMapper.writeValueAsString(request)))
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
+        void shouldGetSecurityEventById() throws Exception {
+                SecurityEventRequest request = new SecurityEventRequest(
+                                "test-server",
+                                EventType.FAILED_LOGIN,
+                                Severity.HIGH,
+                                "Repeated failed login attempts",
+                                "192.168.1.100");
 
-        SecurityEventResponse createdEvent = jsonMapper.readValue(response, SecurityEventResponse.class);
+                String response = mockMvc.perform(post("/api/events")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(jsonMapper.writeValueAsString(request)))
+                                .andReturn()
+                                .getResponse()
+                                .getContentAsString();
 
-        mockMvc.perform(get("/api/events/" + createdEvent.id()))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(createdEvent.id()))
-                .andExpect(jsonPath("$.source").value("test-server"));
-    }
+                SecurityEventResponse createdEvent = jsonMapper.readValue(response, SecurityEventResponse.class);
 
-    @Test
-    void shouldReturnNotFoundForMissingEvent() throws Exception {
-        mockMvc.perform(get("/api/events/999999999"))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message").value("Security event not found"));
-    }
+                mockMvc.perform(get("/api/events/" + createdEvent.id()))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.id").value(createdEvent.id()))
+                                .andExpect(jsonPath("$.source").value("test-server"));
+        }
 
-    @Test
-    void shouldUpdateSecurityEvent() throws Exception {
-        SecurityEventRequest createRequest = new SecurityEventRequest(
-                "test-server",
-                EventType.FAILED_LOGIN,
-                Severity.LOW,
-                "Original message",
-                "192.168.1.100");
+        @Test
+        void shouldReturnNotFoundForMissingEvent() throws Exception {
+                mockMvc.perform(get("/api/events/999999999"))
+                                .andExpect(status().isNotFound())
+                                .andExpect(jsonPath("$.message").value("Security event not found"));
+        }
 
-        String response = mockMvc.perform(post("/api/events")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(jsonMapper.writeValueAsString(createRequest)))
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
+        @Test
+        void shouldUpdateSecurityEvent() throws Exception {
+                SecurityEventRequest createRequest = new SecurityEventRequest(
+                                "test-server",
+                                EventType.FAILED_LOGIN,
+                                Severity.LOW,
+                                "Original message",
+                                "192.168.1.100");
 
-        SecurityEventResponse createdEvent = jsonMapper.readValue(response, SecurityEventResponse.class);
+                String response = mockMvc.perform(post("/api/events")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(jsonMapper.writeValueAsString(createRequest)))
+                                .andReturn()
+                                .getResponse()
+                                .getContentAsString();
 
-        SecurityEventRequest updateRequest = new SecurityEventRequest(
-                "test-server",
-                EventType.FAILED_LOGIN,
-                Severity.HIGH,
-                "Updated message",
-                "192.168.1.100");
+                SecurityEventResponse createdEvent = jsonMapper.readValue(response, SecurityEventResponse.class);
 
-        mockMvc.perform(put("/api/events/" + createdEvent.id())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(jsonMapper.writeValueAsString(updateRequest)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.severity").value("HIGH"))
-                .andExpect(jsonPath("$.message").value("Updated message"));
-    }
+                SecurityEventRequest updateRequest = new SecurityEventRequest(
+                                "test-server",
+                                EventType.FAILED_LOGIN,
+                                Severity.HIGH,
+                                "Updated message",
+                                "192.168.1.100");
 
-    @Test
-    void shouldDeleteSecurityEvent() throws Exception {
-        SecurityEventRequest request = new SecurityEventRequest(
-                "delete-test-server",
-                EventType.PORT_SCAN,
-                Severity.MEDIUM,
-                "Event to delete",
-                null);
+                mockMvc.perform(put("/api/events/" + createdEvent.id())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(jsonMapper.writeValueAsString(updateRequest)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.severity").value("HIGH"))
+                                .andExpect(jsonPath("$.message").value("Updated message"));
+        }
 
-        String response = mockMvc.perform(post("/api/events")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(jsonMapper.writeValueAsString(request)))
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
+        @Test
+        void shouldDeleteSecurityEvent() throws Exception {
+                SecurityEventRequest request = new SecurityEventRequest(
+                                "delete-test-server",
+                                EventType.PORT_SCAN,
+                                Severity.MEDIUM,
+                                "Event to delete",
+                                null);
 
-        SecurityEventResponse createdEvent = jsonMapper.readValue(response, SecurityEventResponse.class);
+                String response = mockMvc.perform(post("/api/events")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(jsonMapper.writeValueAsString(request)))
+                                .andReturn()
+                                .getResponse()
+                                .getContentAsString();
 
-        mockMvc.perform(delete("/api/events/" + createdEvent.id()))
-                .andExpect(status().isOk());
+                SecurityEventResponse createdEvent = jsonMapper.readValue(response, SecurityEventResponse.class);
 
-        mockMvc.perform(get("/api/events/" + createdEvent.id()))
-                .andExpect(status().isNotFound());
-    }
+                mockMvc.perform(delete("/api/events/" + createdEvent.id()))
+                                .andExpect(status().isOk());
 
-    @Test
-    void shouldFilterEventsBySeverity() throws Exception {
-        createEvent(
-                "filter-high",
-                EventType.FAILED_LOGIN,
-                Severity.HIGH,
-                "High severity event");
+                mockMvc.perform(get("/api/events/" + createdEvent.id()))
+                                .andExpect(status().isNotFound());
+        }
 
-        mockMvc.perform(get("/api/events")
-                .param("severity", "HIGH"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[*].severity").value(
-                        everyItem(is("HIGH"))));
-    }
+        @Test
+        void shouldFilterEventsBySeverity() throws Exception {
+                createEvent(
+                                "filter-high",
+                                EventType.FAILED_LOGIN,
+                                Severity.HIGH,
+                                "High severity event");
 
-    @Test
-    void shouldFilterEventsByEventType() throws Exception {
-        createEvent(
-                "filter-port-scan",
-                EventType.PORT_SCAN,
-                Severity.MEDIUM,
-                "Port scan event");
+                mockMvc.perform(get("/api/events")
+                                .param("severity", "HIGH"))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$[*].severity").value(
+                                                everyItem(is("HIGH"))));
+        }
 
-        mockMvc.perform(get("/api/events")
-                .param("eventType", "PORT_SCAN"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[*].eventType").value(
-                        everyItem(is("PORT_SCAN"))));
-    }
+        @Test
+        void shouldFilterEventsByEventType() throws Exception {
+                createEvent(
+                                "filter-port-scan",
+                                EventType.PORT_SCAN,
+                                Severity.MEDIUM,
+                                "Port scan event");
 
-    @Test
-    void shouldFilterEventsBySeverityAndEventType() throws Exception {
-        createEvent(
-                "combined-filter",
-                EventType.FAILED_LOGIN,
-                Severity.CRITICAL,
-                "Critical failed login");
+                mockMvc.perform(get("/api/events")
+                                .param("eventType", "PORT_SCAN"))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$[*].eventType").value(
+                                                everyItem(is("PORT_SCAN"))));
+        }
 
-        mockMvc.perform(get("/api/events")
-                .param("severity", "CRITICAL")
-                .param("eventType", "FAILED_LOGIN"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[*].severity").value(
-                        everyItem(is("CRITICAL"))))
-                .andExpect(jsonPath("$[*].eventType").value(
-                        everyItem(is("FAILED_LOGIN"))));
-    }
+        @Test
+        void shouldFilterEventsBySeverityAndEventType() throws Exception {
+                createEvent(
+                                "combined-filter",
+                                EventType.FAILED_LOGIN,
+                                Severity.CRITICAL,
+                                "Critical failed login");
 
-    @Test
-    void shouldReturnPaginatedEvents() throws Exception {
-        mockMvc.perform(get("/api/events/page")
-                .param("page", "0")
-                .param("size", "5"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content").isArray())
-                .andExpect(jsonPath("$.size").value(5))
-                .andExpect(jsonPath("$.number").value(0));
-    }
+                mockMvc.perform(get("/api/events")
+                                .param("severity", "CRITICAL")
+                                .param("eventType", "FAILED_LOGIN"))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$[*].severity").value(
+                                                everyItem(is("CRITICAL"))))
+                                .andExpect(jsonPath("$[*].eventType").value(
+                                                everyItem(is("FAILED_LOGIN"))));
+        }
 
-    @Test
-    void shouldRejectNegativePage() throws Exception {
-        mockMvc.perform(get("/api/events/page")
-                .param("page", "-1")
-                .param("size", "20"))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message")
-                        .value("Page must be 0 or greater"));
-    }
+        @Test
+        void shouldReturnPaginatedEvents() throws Exception {
+                mockMvc.perform(get("/api/events/page")
+                                .param("page", "0")
+                                .param("size", "5"))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.content").isArray())
+                                .andExpect(jsonPath("$.size").value(5))
+                                .andExpect(jsonPath("$.number").value(0));
+        }
 
-    @Test
-    void shouldRejectOversizedPage() throws Exception {
-        mockMvc.perform(get("/api/events/page")
-                .param("page", "0")
-                .param("size", "101"))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message")
-                        .value("Size must be between 1 and 100"));
-    }
+        @Test
+        void shouldRejectNegativePage() throws Exception {
+                mockMvc.perform(get("/api/events/page")
+                                .param("page", "-1")
+                                .param("size", "20"))
+                                .andExpect(status().isBadRequest())
+                                .andExpect(jsonPath("$.message")
+                                                .value("Page must be 0 or greater"));
+        }
+
+        @Test
+        void shouldRejectOversizedPage() throws Exception {
+                mockMvc.perform(get("/api/events/page")
+                                .param("page", "0")
+                                .param("size", "101"))
+                                .andExpect(status().isBadRequest())
+                                .andExpect(jsonPath("$.message")
+                                                .value("Size must be between 1 and 100"));
+        }
+
+        @Test
+        void shouldSendWebhookForCriticalEvent() throws Exception {
+                reset(alertWebhookClient);
+
+                SecurityEventRequest request = new SecurityEventRequest(
+                                "ids-01",
+                                EventType.MALWARE_DETECTED,
+                                Severity.CRITICAL,
+                                "Critical malware detected",
+                                "10.0.0.5");
+
+                mockMvc.perform(post("/api/events")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(jsonMapper.writeValueAsString(request)))
+                                .andExpect(status().isOk());
+
+                verify(alertWebhookClient).sendCriticalAlert(any(SecurityEventResponse.class));
+        }
+
+        @Test
+        void shouldNotSendWebhookForHighEvent() throws Exception {
+                reset(alertWebhookClient);
+
+                SecurityEventRequest request = new SecurityEventRequest(
+                                "ids-01",
+                                EventType.MALWARE_DETECTED,
+                                Severity.HIGH,
+                                "High severity malware detected",
+                                "10.0.0.5");
+
+                mockMvc.perform(post("/api/events")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(jsonMapper.writeValueAsString(request)))
+                                .andExpect(status().isOk());
+
+                verify(alertWebhookClient, never())
+                                .sendCriticalAlert(any(SecurityEventResponse.class));
+        }
 
 }

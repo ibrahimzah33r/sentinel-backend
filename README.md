@@ -17,6 +17,10 @@ It was built as a portfolio project to demonstrate backend API design, persisten
 - Spring Boot Actuator health and info endpoints
 - Integration testing with Testcontainers
 - GitHub Actions CI
+- Event-ingestion rate limiting with HTTP 429 responses
+- Structured JSON logging
+- Runtime metrics with Spring Boot Actuator
+- CRITICAL-event webhook notifications
 
 ## Tech Stack
 
@@ -142,6 +146,43 @@ GET /api/events/page?page=0&size=20
 GET /actuator/health
 GET /actuator/info
 ```
+## Observability
+
+Sentinel exposes runtime metrics through Spring Boot Actuator:
+
+```http
+GET /actuator/metrics
+```
+
+Example:
+
+```http
+GET /actuator/metrics/jvm.memory.used
+```
+
+Application logs are emitted in structured JSON format to make them easier to process with log aggregation systems.
+
+## Rate Limiting
+
+`POST /api/events` is rate limited to protect the ingestion path from excessive request bursts.
+
+When the configured limit is exceeded, Sentinel returns:
+
+```http
+429 Too Many Requests
+```
+
+## Critical Event Alerts
+
+When a security event with severity `CRITICAL` is created, Sentinel can send the event as JSON to a configured webhook URL.
+
+Configure it with:
+
+```properties
+sentinel.alert.webhook-url=https://example.com/webhook
+```
+
+If the property is blank, webhook delivery is disabled.
 
 ## Run with Docker
 
