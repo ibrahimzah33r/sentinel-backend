@@ -15,6 +15,8 @@ public class SecurityConfig {
         return http
                 .cors(cors -> {
                 })
+                .csrf(csrf -> csrf
+                        .ignoringRequestMatchers("/api/auth/login"))
                 .authorizeHttpRequests(auth -> auth
                         .anyRequest().permitAll())
                 .build();
