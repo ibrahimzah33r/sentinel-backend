@@ -16,8 +16,10 @@ public class SecurityConfig {
                 .cors(cors -> {
                 })
                 .csrf(csrf -> csrf
-                        .ignoringRequestMatchers("/api/auth/login"))
+                        .ignoringRequestMatchers("/api/auth/login", "/api/auth/logout"))
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/auth/login").permitAll()
+                        .requestMatchers("/api/**").authenticated()
                         .anyRequest().permitAll())
                 .build();
     }
