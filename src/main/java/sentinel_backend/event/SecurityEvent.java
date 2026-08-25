@@ -1,5 +1,6 @@
 package sentinel_backend.event;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -37,6 +38,10 @@ public class SecurityEvent {
     private Instant timestamp;
 
     private String ipAddress;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private EventStatus status = EventStatus.NEW;
 
     public SecurityEvent() {
         this.timestamp = Instant.now();
@@ -98,4 +103,11 @@ public class SecurityEvent {
         this.timestamp = timestamp;
     }
 
+    public EventStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(EventStatus status) {
+        this.status = status;
+    }
 }

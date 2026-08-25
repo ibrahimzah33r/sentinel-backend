@@ -1,9 +1,8 @@
 package sentinel_backend.auth;
 
 import java.util.List;
-
 import jakarta.servlet.http.HttpServletRequest;
-
+import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -30,28 +29,39 @@ public class AuthController {
                 this.analystRepository = analystRepository;
         }
 
-        @PostMapping("/login")
-        public ResponseEntity<LoginResponse> login(
-                        @RequestBody LoginRequest request,
-                        HttpServletRequest httpRequest) {
-                LoginResponse response = authService.login(request);
+       @PostMapping("/login")
+public ResponseEntity<LoginResponse> login(
+        @RequestBody LoginRequest request,
+        HttpServletRequest httpRequest
+) {
+    LoginResponse response;
 
-                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                                response.username(),
-                                null,
-                                List.of());
+    try {
+        response = authService.login(request);
+    } catch (IllegalArgumentException exception) {
+        return ResponseEntity.status(401).build();
+    }
 
-                SecurityContext securityContext = SecurityContextHolder.createEmptyContext();
+    UsernamePasswordAuthenticationToken authentication =
+            new UsernamePasswordAuthenticationToken(
+                    response.username(),
+                    null,
+                    List.of()
+            );
 
-                securityContext.setAuthentication(authentication);
+    SecurityContext securityContext =
+            SecurityContextHolder.createEmptyContext();
 
-                httpRequest.getSession(true)
-                                .setAttribute(
-                                                HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,
-                                                securityContext);
+    securityContext.setAuthentication(authentication);
 
-                return ResponseEntity.ok(response);
-        }
+    httpRequest.getSession(true)
+            .setAttribute(
+                    HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,
+                    securityContext
+            );
+
+    return ResponseEntity.ok(response);
+}
 
         @GetMapping("/me")
         public ResponseEntity<LoginResponse> me(Authentication authentication) {
@@ -70,4 +80,9 @@ public class AuthController {
                 return ResponseEntity.noContent().build();
         }
 
+        @GetMapping("/csrf")
+        public ResponseEntity<CsrfTokenResponse> csrf(CsrfToken csrfToken) {
+                return ResponseEntity.ok(
+                                new CsrfTokenResponse(csrfToken.getToken()));
+        }
 }

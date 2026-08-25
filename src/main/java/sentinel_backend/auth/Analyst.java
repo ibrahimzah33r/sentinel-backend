@@ -35,4 +35,6 @@ public class Analyst {
     public String getPasswordHash() {
         return passwordHash;
     }
+
+    
 }

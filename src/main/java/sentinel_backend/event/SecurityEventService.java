@@ -132,6 +132,7 @@ public class SecurityEventService {
                 event.getSource(),
                 event.getEventType(),
                 event.getSeverity(),
+                event.getStatus(),
                 event.getMessage(),
                 event.getIpAddress(),
                 event.getTimestamp());
@@ -149,4 +150,14 @@ public class SecurityEventService {
         return event;
     }
 
+    public SecurityEventResponse updateStatus(Long id, EventStatus status) {
+        SecurityEvent event = repository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Event not found"));
+
+        event.setStatus(status);
+
+        SecurityEvent savedEvent = repository.save(event);
+
+        return toResponse(savedEvent);
+    }
 }

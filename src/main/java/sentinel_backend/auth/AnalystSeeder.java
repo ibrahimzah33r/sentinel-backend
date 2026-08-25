@@ -36,4 +36,5 @@ public class AnalystSeeder implements CommandLineRunner {
 
         analystRepository.save(analyst);
     }
+
 }
