@@ -4,7 +4,9 @@ import java.time.Instant;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
-
+import sentinel_backend.error.InvalidOperationException;
+import sentinel_backend.error.ResourceConflictException;
+import sentinel_backend.error.ResourceNotFoundException;
 import sentinel_backend.event.EventStatus;
 import sentinel_backend.event.SecurityEvent;
 import sentinel_backend.event.SecurityEventRepository;
@@ -22,17 +24,21 @@ public class InvestigationCaseService {
         this.eventRepository = eventRepository;
     }
 
-    public InvestigationCaseResponse createFromEvent(Long eventId) {
+    public InvestigationCaseResponse createFromEvent(
+            Long eventId) {
         SecurityEvent event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new IllegalArgumentException("Event not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Event not found"));
 
         if (event.getStatus() != EventStatus.ESCALATED) {
-            throw new IllegalStateException(
+            throw new InvalidOperationException(
                     "Only escalated events can become cases");
         }
 
-        if (repository.findBySecurityEventId(eventId).isPresent()) {
-            throw new IllegalStateException(
+        if (repository
+                .findBySecurityEventId(eventId)
+                .isPresent()) {
+            throw new ResourceConflictException(
                     "A case already exists for this event");
         }
 
@@ -74,7 +80,8 @@ public class InvestigationCaseService {
             Long id,
             CaseStatus status) {
         InvestigationCase investigationCase = repository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Case not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Case not found"));
 
         if (status == CaseStatus.CLOSED) {
             investigationCase.close();

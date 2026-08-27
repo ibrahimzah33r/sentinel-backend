@@ -3,7 +3,7 @@ package sentinel_backend.event;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
-
+import sentinel_backend.error.ResourceNotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -150,9 +150,12 @@ public class SecurityEventService {
         return event;
     }
 
-    public SecurityEventResponse updateStatus(Long id, EventStatus status) {
+    public SecurityEventResponse updateStatus(
+            Long id,
+            EventStatus status) {
         SecurityEvent event = repository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Event not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Event not found"));
 
         event.setStatus(status);
 

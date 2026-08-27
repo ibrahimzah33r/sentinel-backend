@@ -2,6 +2,8 @@ package sentinel_backend.auth;
 
 import java.util.List;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
+
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -29,48 +31,36 @@ public class AuthController {
                 this.analystRepository = analystRepository;
         }
 
-       @PostMapping("/login")
-public ResponseEntity<LoginResponse> login(
-        @RequestBody LoginRequest request,
-        HttpServletRequest httpRequest
-) {
-    LoginResponse response;
+        @PostMapping("/login")
+        public ResponseEntity<LoginResponse> login(
+                        @RequestBody LoginRequest request,
+                        HttpServletRequest httpRequest) {
+                LoginResponse response;
 
-    try {
-        response = authService.login(request);
-    } catch (IllegalArgumentException exception) {
-        return ResponseEntity.status(401).build();
-    }
+                try {
+                        response = authService.login(request);
+                } catch (IllegalArgumentException exception) {
+                        return ResponseEntity.status(401).build();
+                }
 
-    UsernamePasswordAuthenticationToken authentication =
-            new UsernamePasswordAuthenticationToken(
-                    response.username(),
-                    null,
-                    List.of()
-            );
+                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                                response.username(),
+                                null,
+                                List.of());
 
-    SecurityContext securityContext =
-            SecurityContextHolder.createEmptyContext();
+                SecurityContext securityContext = SecurityContextHolder.createEmptyContext();
 
-    securityContext.setAuthentication(authentication);
+                securityContext.setAuthentication(authentication);
 
-    httpRequest.getSession(true)
-            .setAttribute(
-                    HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,
-                    securityContext
-            );
+                HttpSession session = httpRequest.getSession(true);
 
-    return ResponseEntity.ok(response);
-}
+                httpRequest.changeSessionId();
 
-        @GetMapping("/me")
-        public ResponseEntity<LoginResponse> me(Authentication authentication) {
-                return analystRepository.findByUsername(authentication.getName())
-                                .map(analyst -> ResponseEntity.ok(
-                                                new LoginResponse(
-                                                                analyst.getId(),
-                                                                analyst.getUsername())))
-                                .orElseGet(() -> ResponseEntity.notFound().build());
+                session.setAttribute(
+                                HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,
+                                securityContext);
+
+                return ResponseEntity.ok(response);
         }
 
         @PostMapping("/logout")
