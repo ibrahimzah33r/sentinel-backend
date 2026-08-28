@@ -33,7 +33,7 @@ public class AnalystSeeder implements CommandLineRunner {
         Analyst analyst = new Analyst(
                 username,
                 passwordEncoder.encode(password));
-
+        analyst.setRole(AnalystRole.ADMIN);
         analystRepository.save(analyst);
     }
 

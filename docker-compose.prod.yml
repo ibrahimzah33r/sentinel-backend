@@ -24,7 +24,7 @@ services:
       SENTINEL_ANALYST_PASSWORD: ${SENTINEL_ANALYST_PASSWORD}
 
   frontend:
-    image: ghcr.io/ibrahimzazh33r/sentinel-web:latest
+    image: ghcr.io/ibrahimzah33r/sentinel-web:latest
     restart: unless-stopped
     depends_on:
       - backend
