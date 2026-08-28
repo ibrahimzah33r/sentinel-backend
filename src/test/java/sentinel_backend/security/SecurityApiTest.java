@@ -10,42 +10,46 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
+
+import sentinel_backend.TestContainersConfig;
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@Import(TestContainersConfig.class)
 class SecurityApiTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+        @Autowired
+        private MockMvc mockMvc;
 
-    @Test
-    void eventsRequireAuthentication() throws Exception {
-        mockMvc.perform(
-                get("/api/events"))
-                .andExpect(status().isUnauthorized());
-    }
+        @Test
+        void eventsRequireAuthentication() throws Exception {
+                mockMvc.perform(
+                                get("/api/events"))
+                                .andExpect(status().isUnauthorized());
+        }
 
-    @Test
-    void eventStatusUpdateWithoutCsrfIsForbidden()
-            throws Exception {
+        @Test
+        void eventStatusUpdateWithoutCsrfIsForbidden()
+                        throws Exception {
 
-        mockMvc.perform(
-                patch("/api/events/99999/status")
-                        .param("status", "REVIEWED")
-                        .with(user("analyst")))
-                .andExpect(status().isForbidden());
-    }
+                mockMvc.perform(
+                                patch("/api/events/99999/status")
+                                                .param("status", "REVIEWED")
+                                                .with(user("analyst")))
+                                .andExpect(status().isForbidden());
+        }
 
-    @Test
-    void missingEventReturnsNotFound()
-            throws Exception {
+        @Test
+        void missingEventReturnsNotFound()
+                        throws Exception {
 
-        mockMvc.perform(
-                patch("/api/events/99999/status")
-                        .param("status", "REVIEWED")
-                        .with(user("analyst"))
-                        .with(csrf().asHeader()))
-                .andExpect(status().isNotFound());
-    }
+                mockMvc.perform(
+                                patch("/api/events/99999/status")
+                                                .param("status", "REVIEWED")
+                                                .with(user("analyst"))
+                                                .with(csrf().asHeader()))
+                                .andExpect(status().isNotFound());
+        }
 }
