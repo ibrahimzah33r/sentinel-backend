@@ -23,6 +23,9 @@ public class Analyst {
     @Column
     private AnalystRole role;
 
+    @Column(nullable = false)
+    private boolean enabled = true;
+
     protected Analyst() {
     }
 
@@ -57,5 +60,13 @@ public class Analyst {
 
     public void setPasswordHash(String passwordHash) {
         this.passwordHash = passwordHash;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
     }
 }

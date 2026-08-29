@@ -22,6 +22,10 @@ public class AuthService {
                 Analyst analyst = analystRepository.findByUsername(request.username())
                                 .orElseThrow(() -> new IllegalArgumentException("Invalid credentials"));
 
+                if (!analyst.isEnabled()) {
+                        throw new IllegalArgumentException(
+                                        "Invalid credentials");
+                }
                 if (!passwordEncoder.matches(request.password(), analyst.getPasswordHash())) {
                         throw new IllegalArgumentException("Invalid credentials");
                 }
@@ -46,13 +50,15 @@ public class AuthService {
                 analyst.setPasswordHash(
                                 passwordEncoder.encode(request.password()));
                 analyst.setRole(AnalystRole.ANALYST);
+                analyst.setEnabled(true);
 
                 Analyst savedAnalyst = analystRepository.save(analyst);
 
                 return new AnalystResponse(
                                 savedAnalyst.getId(),
                                 savedAnalyst.getUsername(),
-                                savedAnalyst.getRole());
+                                savedAnalyst.getRole(),
+                                savedAnalyst.isEnabled());
         }
 
         public AnalystResponse resetAnalystPassword(
@@ -71,6 +77,26 @@ public class AuthService {
                 return new AnalystResponse(
                                 savedAnalyst.getId(),
                                 savedAnalyst.getUsername(),
-                                savedAnalyst.getRole());
+                                savedAnalyst.getRole(),
+                                savedAnalyst.isEnabled());
+        }
+
+        public AnalystResponse setAnalystEnabled(
+                        Long id,
+                        boolean enabled) {
+                Analyst analyst = analystRepository
+                                .findById(id)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Analyst not found"));
+
+                analyst.setEnabled(enabled);
+
+                Analyst savedAnalyst = analystRepository.save(analyst);
+
+                return new AnalystResponse(
+                                savedAnalyst.getId(),
+                                savedAnalyst.getUsername(),
+                                savedAnalyst.getRole(),
+                                savedAnalyst.isEnabled());
         }
 }
