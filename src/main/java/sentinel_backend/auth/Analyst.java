@@ -51,4 +51,11 @@ public class Analyst {
         this.role = role;
     }
 
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public void setPasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
+    }
 }

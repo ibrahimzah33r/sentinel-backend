@@ -1,0 +1,39 @@
+package sentinel_backend.auth;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+
+@RestController
+@RequestMapping("/api/admin/analysts")
+public class AdminAnalystController {
+
+    private final AuthService authService;
+
+    public AdminAnalystController(
+            AuthService authService) {
+        this.authService = authService;
+    }
+
+    @PostMapping
+    public ResponseEntity<AnalystResponse> createAnalyst(
+            @RequestBody CreateAnalystRequest request) {
+        return ResponseEntity.ok(
+                authService.createAnalyst(request));
+    }
+
+    @PatchMapping("/{id}/password")
+    public ResponseEntity<AnalystResponse> resetPassword(
+            @PathVariable Long id,
+            @RequestBody ResetAnalystPasswordRequest request) {
+        return ResponseEntity.ok(
+                authService.resetAnalystPassword(
+                        id,
+                        request));
+    }
+
+}
