@@ -8,6 +8,7 @@ import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
@@ -43,10 +44,13 @@ public class AuthController {
                         return ResponseEntity.status(401).build();
                 }
 
+                SimpleGrantedAuthority authority = new SimpleGrantedAuthority(
+                                "ROLE_" + response.role().name());
+
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                                 response.username(),
                                 null,
-                                List.of());
+                                List.of(authority));
 
                 SecurityContext securityContext = SecurityContextHolder.createEmptyContext();
 

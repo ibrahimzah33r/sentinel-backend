@@ -11,12 +11,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 
+
 @RestController
 @RequestMapping("/api/admin/analysts")
 public class AdminController {
         private final AuthService authService;
 
-        public AdminController                       AuthService authService) {
+        public AdminController(AuthService authService) {
                 this.authService = authService;
         }
 
