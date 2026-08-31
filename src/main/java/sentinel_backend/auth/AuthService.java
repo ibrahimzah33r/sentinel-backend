@@ -3,6 +3,8 @@ package sentinel_backend.auth;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.util.List;
+
+import sentinel_backend.error.InvalidOperationException;
 import sentinel_backend.error.ResourceNotFoundException;
 
 @Service
@@ -89,6 +91,11 @@ public class AuthService {
                                 .findById(id)
                                 .orElseThrow(() -> new ResourceNotFoundException(
                                                 "Analyst not found"));
+
+                if (analyst.getRole() == AnalystRole.ADMIN) {
+                        throw new InvalidOperationException(
+                                        "Admin accounts cannot be disabled");
+                }
 
                 analyst.setEnabled(enabled);
 
