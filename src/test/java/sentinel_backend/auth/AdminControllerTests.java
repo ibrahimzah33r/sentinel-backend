@@ -23,7 +23,7 @@ import sentinel_backend.TestContainersConfig;
 @SpringBootTest
 @AutoConfigureMockMvc
 @Import(TestContainersConfig.class)
-class AdminAnalystControllerTests {
+class AdminControllerTests {
 
     @Autowired
     private MockMvc mockMvc;

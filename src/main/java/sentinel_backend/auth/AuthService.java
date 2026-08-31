@@ -2,7 +2,7 @@ package sentinel_backend.auth;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
+import java.util.List;
 import sentinel_backend.error.ResourceNotFoundException;
 
 @Service
@@ -99,5 +99,17 @@ public class AuthService {
                                 savedAnalyst.getUsername(),
                                 savedAnalyst.getRole(),
                                 savedAnalyst.isEnabled());
+        }
+
+        public List<AnalystResponse> getAnalysts() {
+                return analystRepository
+                                .findAll()
+                                .stream()
+                                .map(analyst -> new AnalystResponse(
+                                                analyst.getId(),
+                                                analyst.getUsername(),
+                                                analyst.getRole(),
+                                                analyst.isEnabled()))
+                                .toList();
         }
 }
