@@ -32,7 +32,8 @@ public class AuthService {
 
                 return new LoginResponse(
                                 analyst.getId(),
-                                analyst.getUsername());
+                                analyst.getUsername(),
+                                analyst.getRole());
         }
 
         public AnalystResponse createAnalyst(
