@@ -6,6 +6,7 @@ import java.util.List;
 
 import sentinel_backend.error.InvalidOperationException;
 import sentinel_backend.error.ResourceNotFoundException;
+import sentinel_backend.error.ResourceConflictException;
 
 @Service
 public class AuthService {
@@ -43,15 +44,17 @@ public class AuthService {
                 if (analystRepository
                                 .findByUsername(request.username())
                                 .isPresent()) {
-                        throw new IllegalArgumentException(
+                        throw new ResourceConflictException(
                                         "Username already exists");
                 }
 
                 Analyst analyst = new Analyst();
 
                 analyst.setUsername(request.username());
+
                 analyst.setPasswordHash(
                                 passwordEncoder.encode(request.password()));
+
                 analyst.setRole(AnalystRole.ANALYST);
                 analyst.setEnabled(true);
 
