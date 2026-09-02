@@ -122,4 +122,16 @@ public class AuthService {
                                                 analyst.isEnabled()))
                                 .toList();
         }
+
+        public LoginResponse getCurrentUser(String username) {
+                Analyst analyst = analystRepository
+                                .findByUsername(username)
+                                .orElseThrow(() -> new IllegalArgumentException(
+                                                "Authenticated analyst not found"));
+
+                return new LoginResponse(
+                                analyst.getId(),
+                                analyst.getUsername(),
+                                analyst.getRole());
+        }
 }

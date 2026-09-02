@@ -83,20 +83,8 @@ public class AuthController {
         @GetMapping("/me")
         public ResponseEntity<LoginResponse> me(
                         Authentication authentication) {
-                if (authentication == null ||
-                                !authentication.isAuthenticated()) {
-                        return ResponseEntity.status(401).build();
-                }
-
-                Analyst analyst = analystRepository
-                                .findByUsername(authentication.getName())
-                                .orElseThrow(() -> new IllegalArgumentException(
-                                                "Authenticated analyst not found"));
-
                 return ResponseEntity.ok(
-                                new LoginResponse(
-                                                analyst.getId(),
-                                                analyst.getUsername(),
-                                                analyst.getRole()));
+                                authService.getCurrentUser(
+                                                authentication.getName()));
         }
 }
