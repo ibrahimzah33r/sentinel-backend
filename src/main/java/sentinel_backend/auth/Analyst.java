@@ -20,8 +20,8 @@ public class Analyst {
     private String passwordHash;
 
     @Enumerated(EnumType.STRING)
-    @Column
-    private AnalystRole role;
+    @Column(nullable = false)
+    private AnalystRole role = AnalystRole.ANALYST;
 
     @Column(nullable = false)
     private boolean enabled = true;
