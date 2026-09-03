@@ -7,7 +7,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,219 +25,333 @@ import sentinel_backend.TestContainersConfig;
 @Import(TestContainersConfig.class)
 class AdminControllerTests {
 
-    @Autowired
-    private MockMvc mockMvc;
+        @Autowired
+        private MockMvc mockMvc;
 
-    @Autowired
-    private AnalystRepository analystRepository;
+        @Autowired
+        private AnalystRepository analystRepository;
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+        @Autowired
+        private PasswordEncoder passwordEncoder;
 
-    @AfterEach
-    void cleanUp() {
-        analystRepository.deleteAll();
-    }
+        @AfterEach
+        void cleanUp() {
+                analystRepository.deleteAll();
+        }
 
-    @Test
-    void anonymousUserCannotCreateAnalyst() throws Exception {
-        mockMvc.perform(
-                post("/api/admin/analysts")
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "username": "analyst2",
-                                  "password": "StrongPassword123!"
-                                }
-                                """))
-                .andExpect(status().isUnauthorized());
-    }
+        @Test
+        void anonymousUserCannotCreateAnalyst() throws Exception {
+                mockMvc.perform(
+                                post("/api/admin/analysts")
+                                                .with(csrf())
+                                                .contentType(MediaType.APPLICATION_JSON)
+                                                .content("""
+                                                                {
+                                                                  "username": "analyst2",
+                                                                  "password": "StrongPassword123!"
+                                                                }
+                                                                """))
+                                .andExpect(status().isUnauthorized());
+        }
 
-    @Test
-    void normalAnalystCannotCreateAnalyst() throws Exception {
-        mockMvc.perform(
-                post("/api/admin/analysts")
-                        .with(user("analyst").roles("ANALYST"))
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "username": "analyst2",
-                                  "password": "StrongPassword123!"
-                                }
-                                """))
-                .andExpect(status().isForbidden());
-    }
+        @Test
+        void normalAnalystCannotCreateAnalyst() throws Exception {
+                mockMvc.perform(
+                                post("/api/admin/analysts")
+                                                .with(user("analyst").roles("ANALYST"))
+                                                .with(csrf())
+                                                .contentType(MediaType.APPLICATION_JSON)
+                                                .content("""
+                                                                {
+                                                                  "username": "analyst2",
+                                                                  "password": "StrongPassword123!"
+                                                                }
+                                                                """))
+                                .andExpect(status().isForbidden());
+        }
 
-    @Test
-    void adminCanCreateAnalyst() throws Exception {
-        mockMvc.perform(
-                post("/api/admin/analysts")
-                        .with(user("admin").roles("ADMIN"))
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "username": "analyst2",
-                                  "password": "StrongPassword123!"
-                                }
-                                """))
-                .andExpect(status().isOk())
-                .andExpect(
-                        jsonPath("$.username")
-                                .value("analyst2"))
-                .andExpect(
-                        jsonPath("$.role")
-                                .value("ANALYST"))
-                .andExpect(
-                        jsonPath("$.enabled")
-                                .value(true));
+        @Test
+        void adminCanCreateAnalyst() throws Exception {
+                mockMvc.perform(
+                                post("/api/admin/analysts")
+                                                .with(user("admin").roles("ADMIN"))
+                                                .with(csrf())
+                                                .contentType(MediaType.APPLICATION_JSON)
+                                                .content("""
+                                                                {
+                                                                  "username": "analyst2",
+                                                                  "password": "StrongPassword123!"
+                                                                }
+                                                                """))
+                                .andExpect(status().isOk())
+                                .andExpect(
+                                                jsonPath("$.username")
+                                                                .value("analyst2"))
+                                .andExpect(
+                                                jsonPath("$.role")
+                                                                .value("ANALYST"))
+                                .andExpect(
+                                                jsonPath("$.enabled")
+                                                                .value(true));
 
-        Analyst analyst = analystRepository
-                .findByUsername("analyst2")
-                .orElseThrow();
+                Analyst analyst = analystRepository
+                                .findByUsername("analyst2")
+                                .orElseThrow();
 
-        assertThat(analyst.getRole())
-                .isEqualTo(AnalystRole.ANALYST);
+                assertThat(analyst.getRole())
+                                .isEqualTo(AnalystRole.ANALYST);
 
-        assertThat(
-                passwordEncoder.matches(
-                        "StrongPassword123!",
-                        analyst.getPasswordHash()))
-                .isTrue();
-    }
+                assertThat(
+                                passwordEncoder.matches(
+                                                "StrongPassword123!",
+                                                analyst.getPasswordHash()))
+                                .isTrue();
+        }
 
-    @Test
-    void normalAnalystCannotResetPassword() throws Exception {
-        Analyst analyst = new Analyst(
-                "analyst2",
-                passwordEncoder.encode("OldPassword123!"));
-        analyst.setRole(AnalystRole.ANALYST);
-        analyst.setEnabled(true);
+        @Test
+        void normalAnalystCannotResetPassword() throws Exception {
+                Analyst analyst = new Analyst(
+                                "analyst2",
+                                passwordEncoder.encode("OldPassword123!"));
+                analyst.setRole(AnalystRole.ANALYST);
+                analyst.setEnabled(true);
 
-        Analyst savedAnalyst = analystRepository.save(analyst);
+                Analyst savedAnalyst = analystRepository.save(analyst);
 
-        mockMvc.perform(
-                patch(
-                        "/api/admin/analysts/"
-                                + savedAnalyst.getId()
-                                + "/password")
-                        .with(user("analyst").roles("ANALYST"))
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "password": "NewPassword123!"
-                                }
-                                """))
-                .andExpect(status().isForbidden());
-    }
+                mockMvc.perform(
+                                patch(
+                                                "/api/admin/analysts/"
+                                                                + savedAnalyst.getId()
+                                                                + "/password")
+                                                .with(user("analyst").roles("ANALYST"))
+                                                .with(csrf())
+                                                .contentType(MediaType.APPLICATION_JSON)
+                                                .content("""
+                                                                {
+                                                                  "password": "NewPassword123!"
+                                                                }
+                                                                """))
+                                .andExpect(status().isForbidden());
+        }
 
-    @Test
-    void adminCanResetPassword() throws Exception {
-        Analyst analyst = new Analyst(
-                "analyst2",
-                passwordEncoder.encode("OldPassword123!"));
-        analyst.setRole(AnalystRole.ANALYST);
-        analyst.setEnabled(true);
+        @Test
+        void adminCanResetPassword() throws Exception {
+                Analyst analyst = new Analyst(
+                                "analyst2",
+                                passwordEncoder.encode("OldPassword123!"));
+                analyst.setRole(AnalystRole.ANALYST);
+                analyst.setEnabled(true);
 
-        Analyst savedAnalyst = analystRepository.save(analyst);
+                Analyst savedAnalyst = analystRepository.save(analyst);
 
-        mockMvc.perform(
-                patch(
-                        "/api/admin/analysts/"
-                                + savedAnalyst.getId()
-                                + "/password")
-                        .with(user("admin").roles("ADMIN"))
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "password": "NewPassword123!"
-                                }
-                                """))
-                .andExpect(status().isOk());
+                mockMvc.perform(
+                                patch(
+                                                "/api/admin/analysts/"
+                                                                + savedAnalyst.getId()
+                                                                + "/password")
+                                                .with(user("admin").roles("ADMIN"))
+                                                .with(csrf())
+                                                .contentType(MediaType.APPLICATION_JSON)
+                                                .content("""
+                                                                {
+                                                                  "password": "NewPassword123!"
+                                                                }
+                                                                """))
+                                .andExpect(status().isOk());
 
-        Analyst updatedAnalyst = analystRepository
-                .findById(savedAnalyst.getId())
-                .orElseThrow();
+                Analyst updatedAnalyst = analystRepository
+                                .findById(savedAnalyst.getId())
+                                .orElseThrow();
 
-        assertThat(
-                passwordEncoder.matches(
-                        "NewPassword123!",
-                        updatedAnalyst.getPasswordHash()))
-                .isTrue();
-    }
+                assertThat(
+                                passwordEncoder.matches(
+                                                "NewPassword123!",
+                                                updatedAnalyst.getPasswordHash()))
+                                .isTrue();
+        }
 
-    @Test
-    void adminCanDisableAnalyst() throws Exception {
-        Analyst analyst = new Analyst(
-                "analyst2",
-                passwordEncoder.encode("Password123!"));
-        analyst.setRole(AnalystRole.ANALYST);
-        analyst.setEnabled(true);
+        @Test
+        void adminCanDisableAnalyst() throws Exception {
+                Analyst analyst = new Analyst(
+                                "analyst2",
+                                passwordEncoder.encode("Password123!"));
+                analyst.setRole(AnalystRole.ANALYST);
+                analyst.setEnabled(true);
 
-        Analyst savedAnalyst = analystRepository.save(analyst);
+                Analyst savedAnalyst = analystRepository.save(analyst);
 
-        mockMvc.perform(
-                patch(
-                        "/api/admin/analysts/"
-                                + savedAnalyst.getId()
-                                + "/enabled")
-                        .param("enabled", "false")
-                        .with(user("admin").roles("ADMIN"))
-                        .with(csrf()))
-                .andExpect(status().isOk())
-                .andExpect(
-                        jsonPath("$.enabled")
-                                .value(false));
+                mockMvc.perform(
+                                patch(
+                                                "/api/admin/analysts/"
+                                                                + savedAnalyst.getId()
+                                                                + "/enabled")
+                                                .param("enabled", "false")
+                                                .with(user("admin").roles("ADMIN"))
+                                                .with(csrf()))
+                                .andExpect(status().isOk())
+                                .andExpect(
+                                                jsonPath("$.enabled")
+                                                                .value(false));
 
-        Analyst updatedAnalyst = analystRepository
-                .findById(savedAnalyst.getId())
-                .orElseThrow();
+                Analyst updatedAnalyst = analystRepository
+                                .findById(savedAnalyst.getId())
+                                .orElseThrow();
 
-        assertThat(updatedAnalyst.isEnabled())
-                .isFalse();
-    }
+                assertThat(updatedAnalyst.isEnabled())
+                                .isFalse();
+        }
 
-    @Test
-    void disabledAnalystCannotLogin() throws Exception {
-        Analyst analyst = new Analyst(
-                "analyst2",
-                passwordEncoder.encode("Password123!"));
-        analyst.setRole(AnalystRole.ANALYST);
-        analyst.setEnabled(false);
+        @Test
+        void disabledAnalystCannotLogin() throws Exception {
+                Analyst analyst = new Analyst(
+                                "analyst2",
+                                passwordEncoder.encode("Password123!"));
+                analyst.setRole(AnalystRole.ANALYST);
+                analyst.setEnabled(false);
 
-        analystRepository.save(analyst);
+                analystRepository.save(analyst);
 
-        mockMvc.perform(
-                post("/api/auth/login")
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "username": "analyst2",
-                                  "password": "Password123!"
-                                }
-                                """))
-                .andExpect(status().isUnauthorized());
-    }
+                mockMvc.perform(
+                                post("/api/auth/login")
+                                                .with(csrf())
+                                                .contentType(MediaType.APPLICATION_JSON)
+                                                .content("""
+                                                                {
+                                                                  "username": "analyst2",
+                                                                  "password": "Password123!"
+                                                                }
+                                                                """))
+                                .andExpect(status().isUnauthorized());
+        }
 
-    @Test
-    void resettingMissingAnalystReturnsNotFound()
-            throws Exception {
+        @Test
+        void resettingMissingAnalystReturnsNotFound()
+                        throws Exception {
 
-        mockMvc.perform(
-                patch("/api/admin/analysts/99999/password")
-                        .with(user("admin").roles("ADMIN"))
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "password": "NewPassword123!"
-                                }
-                                """))
-                .andExpect(status().isNotFound());
-    }
+                mockMvc.perform(
+                                patch("/api/admin/analysts/99999/password")
+                                                .with(user("admin").roles("ADMIN"))
+                                                .with(csrf())
+                                                .contentType(MediaType.APPLICATION_JSON)
+                                                .content("""
+                                                                {
+                                                                  "password": "NewPassword123!"
+                                                                }
+                                                                """))
+                                .andExpect(status().isNotFound());
+        }
+
+        @Test
+        void adminCanDeleteAnalyst() throws Exception {
+                Analyst analyst = new Analyst(
+                                "analyst2",
+                                passwordEncoder.encode("Password123!"));
+                analyst.setRole(AnalystRole.ANALYST);
+                analyst.setEnabled(true);
+
+                Analyst savedAnalyst = analystRepository.save(analyst);
+
+                mockMvc.perform(
+                                delete(
+                                                "/api/admin/analysts/"
+                                                                + savedAnalyst.getId())
+                                                .with(user("admin").roles("ADMIN"))
+                                                .with(csrf()))
+                                .andExpect(status().isNoContent());
+
+                assertThat(
+                                analystRepository.findById(
+                                                savedAnalyst.getId()))
+                                .isEmpty();
+        }
+
+        @Test
+        void adminCanDeleteAdminWhenAnotherEnabledAdminExists()
+                        throws Exception {
+
+                Analyst adminOne = new Analyst(
+                                "admin1",
+                                passwordEncoder.encode("Password123!"));
+                adminOne.setRole(AnalystRole.ADMIN);
+                adminOne.setEnabled(true);
+
+                analystRepository.save(adminOne);
+
+                Analyst adminTwo = new Analyst(
+                                "admin2",
+                                passwordEncoder.encode("Password123!"));
+                adminTwo.setRole(AnalystRole.ADMIN);
+                adminTwo.setEnabled(true);
+
+                Analyst savedAdminTwo = analystRepository.save(adminTwo);
+
+                mockMvc.perform(
+                                delete(
+                                                "/api/admin/analysts/"
+                                                                + savedAdminTwo.getId())
+                                                .with(user("admin").roles("ADMIN"))
+                                                .with(csrf()))
+                                .andExpect(status().isNoContent());
+
+                assertThat(
+                                analystRepository.findById(
+                                                savedAdminTwo.getId()))
+                                .isEmpty();
+        }
+
+        @Test
+        void adminCannotDeleteLastEnabledAdmin()
+                        throws Exception {
+
+                Analyst admin = new Analyst(
+                                "admin1",
+                                passwordEncoder.encode("Password123!"));
+                admin.setRole(AnalystRole.ADMIN);
+                admin.setEnabled(true);
+
+                Analyst savedAdmin = analystRepository.save(admin);
+
+                mockMvc.perform(
+                                delete(
+                                                "/api/admin/analysts/"
+                                                                + savedAdmin.getId())
+                                                .with(user("admin").roles("ADMIN"))
+                                                .with(csrf()))
+                                .andExpect(status().isBadRequest());
+
+                assertThat(
+                                analystRepository.findById(
+                                                savedAdmin.getId()))
+                                .isPresent();
+        }
+
+        @Test
+        void adminCannotDisableLastEnabledAdmin()
+                        throws Exception {
+
+                Analyst admin = new Analyst(
+                                "admin1",
+                                passwordEncoder.encode("Password123!"));
+                admin.setRole(AnalystRole.ADMIN);
+                admin.setEnabled(true);
+
+                Analyst savedAdmin = analystRepository.save(admin);
+
+                mockMvc.perform(
+                                patch(
+                                                "/api/admin/analysts/"
+                                                                + savedAdmin.getId()
+                                                                + "/enabled")
+                                                .param("enabled", "false")
+                                                .with(user("admin").roles("ADMIN"))
+                                                .with(csrf()))
+                                .andExpect(status().isBadRequest());
+
+                Analyst unchangedAdmin = analystRepository
+                                .findById(savedAdmin.getId())
+                                .orElseThrow();
+
+                assertThat(unchangedAdmin.isEnabled())
+                                .isTrue();
+        }
 }
