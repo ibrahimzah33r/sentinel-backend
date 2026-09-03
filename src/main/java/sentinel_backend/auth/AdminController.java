@@ -8,9 +8,9 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
-import java.util.List;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/admin/analysts")
@@ -52,6 +52,14 @@ public class AdminController {
         public ResponseEntity<List<AnalystResponse>> getAnalysts() {
                 return ResponseEntity.ok(
                                 authService.getAnalysts());
+        }
+
+        @DeleteMapping("/{id}")
+        public ResponseEntity<Void> deleteAnalyst(
+                        @PathVariable Long id) {
+                authService.deleteAnalyst(id);
+
+                return ResponseEntity.noContent().build();
         }
 
 }

@@ -95,20 +95,24 @@ public class AuthService {
                                 .orElseThrow(() -> new ResourceNotFoundException(
                                                 "Analyst not found"));
 
-                if (analyst.getRole() == AnalystRole.ADMIN) {
+                if (!enabled
+                                && analyst.getRole() == AnalystRole.ADMIN
+                                && analystRepository
+                                                .countByRoleAndEnabledTrue(
+                                                                AnalystRole.ADMIN) <= 1) {
                         throw new InvalidOperationException(
-                                        "Admin accounts cannot be disabled");
+                                        "Cannot disable the last enabled admin");
                 }
 
                 analyst.setEnabled(enabled);
 
-                Analyst savedAnalyst = analystRepository.save(analyst);
+                Analyst saved = analystRepository.save(analyst);
 
                 return new AnalystResponse(
-                                savedAnalyst.getId(),
-                                savedAnalyst.getUsername(),
-                                savedAnalyst.getRole(),
-                                savedAnalyst.isEnabled());
+                                saved.getId(),
+                                saved.getUsername(),
+                                saved.getRole(),
+                                saved.isEnabled());
         }
 
         public List<AnalystResponse> getAnalysts() {
@@ -133,5 +137,23 @@ public class AuthService {
                                 analyst.getId(),
                                 analyst.getUsername(),
                                 analyst.getRole());
+        }
+
+        public void deleteAnalyst(Long id) {
+                Analyst analyst = analystRepository
+                                .findById(id)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Analyst not found"));
+
+                if (analyst.getRole() == AnalystRole.ADMIN
+                                && analyst.isEnabled()
+                                && analystRepository
+                                                .countByRoleAndEnabledTrue(
+                                                                AnalystRole.ADMIN) <= 1) {
+                        throw new InvalidOperationException(
+                                        "Cannot delete the last enabled admin");
+                }
+
+                analystRepository.delete(analyst);
         }
 }
