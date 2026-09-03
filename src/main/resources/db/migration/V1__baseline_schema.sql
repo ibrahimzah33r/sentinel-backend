@@ -2,7 +2,6 @@
 -- PostgreSQL database dump
 --
 
-\restrict eaFxfDAn16mPVFI9LtTZURjtju3WNguWgcuO8JeL3Xd12alpbFkXBQFdVrNR8pW
 
 -- Dumped from database version 17.11 (Debian 17.11-1.pgdg13+2)
 -- Dumped by pg_dump version 17.11 (Debian 17.11-1.pgdg13+2)
@@ -155,5 +154,4 @@ ALTER TABLE ONLY public.investigation_case
 -- PostgreSQL database dump complete
 --
 
-\unrestrict eaFxfDAn16mPVFI9LtTZURjtju3WNguWgcuO8JeL3Xd12alpbFkXBQFdVrNR8pW
 
