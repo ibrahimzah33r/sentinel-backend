@@ -62,4 +62,12 @@ public class AdminController {
                 return ResponseEntity.noContent().build();
         }
 
+        @PatchMapping("/{id}/role")
+        public ResponseEntity<AnalystResponse> setAnalystRole(
+                        @PathVariable Long id,
+                        @RequestParam AnalystRole role) {
+                return ResponseEntity.ok(
+                                authService.setAnalystRole(id, role));
+        }
+
 }

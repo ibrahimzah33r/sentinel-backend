@@ -156,4 +156,33 @@ public class AuthService {
 
                 analystRepository.delete(analyst);
         }
+
+        public AnalystResponse setAnalystRole(
+                        Long id,
+                        AnalystRole role) {
+                Analyst analyst = analystRepository
+                                .findById(id)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Analyst not found"));
+
+                if (analyst.getRole() == AnalystRole.ADMIN
+                                && role != AnalystRole.ADMIN
+                                && analyst.isEnabled()
+                                && analystRepository
+                                                .countByRoleAndEnabledTrue(
+                                                                AnalystRole.ADMIN) <= 1) {
+                        throw new InvalidOperationException(
+                                        "Cannot demote the last enabled admin");
+                }
+
+                analyst.setRole(role);
+
+                Analyst saved = analystRepository.save(analyst);
+
+                return new AnalystResponse(
+                                saved.getId(),
+                                saved.getUsername(),
+                                saved.getRole(),
+                                saved.isEnabled());
+        }
 }

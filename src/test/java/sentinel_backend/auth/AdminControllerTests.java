@@ -354,4 +354,101 @@ class AdminControllerTests {
                 assertThat(unchangedAdmin.isEnabled())
                                 .isTrue();
         }
+
+        @Test
+        void adminCanPromoteAnalystToAdmin()
+                        throws Exception {
+
+                Analyst analyst = new Analyst(
+                                "analyst2",
+                                passwordEncoder.encode("Password123!"));
+                analyst.setRole(AnalystRole.ANALYST);
+                analyst.setEnabled(true);
+
+                Analyst savedAnalyst = analystRepository.save(analyst);
+
+                mockMvc.perform(
+                                patch(
+                                                "/api/admin/analysts/"
+                                                                + savedAnalyst.getId()
+                                                                + "/role")
+                                                .param("role", "ADMIN")
+                                                .with(user("admin").roles("ADMIN"))
+                                                .with(csrf()))
+                                .andExpect(status().isOk())
+                                .andExpect(
+                                                jsonPath("$.role")
+                                                                .value("ADMIN"));
+
+                Analyst updatedAnalyst = analystRepository
+                                .findById(savedAnalyst.getId())
+                                .orElseThrow();
+
+                assertThat(updatedAnalyst.getRole())
+                                .isEqualTo(AnalystRole.ADMIN);
+        }
+
+        @Test
+        void adminCanDemoteAdminWhenAnotherEnabledAdminExists()
+                        throws Exception {
+
+                Analyst adminOne = new Analyst(
+                                "admin1",
+                                passwordEncoder.encode("Password123!"));
+                adminOne.setRole(AnalystRole.ADMIN);
+                adminOne.setEnabled(true);
+
+                analystRepository.save(adminOne);
+
+                Analyst adminTwo = new Analyst(
+                                "admin2",
+                                passwordEncoder.encode("Password123!"));
+                adminTwo.setRole(AnalystRole.ADMIN);
+                adminTwo.setEnabled(true);
+
+                Analyst savedAdminTwo = analystRepository.save(adminTwo);
+
+                mockMvc.perform(
+                                patch(
+                                                "/api/admin/analysts/"
+                                                                + savedAdminTwo.getId()
+                                                                + "/role")
+                                                .param("role", "ANALYST")
+                                                .with(user("admin").roles("ADMIN"))
+                                                .with(csrf()))
+                                .andExpect(status().isOk())
+                                .andExpect(
+                                                jsonPath("$.role")
+                                                                .value("ANALYST"));
+        }
+
+        @Test
+        void adminCannotDemoteLastEnabledAdmin()
+                        throws Exception {
+
+                Analyst admin = new Analyst(
+                                "admin1",
+                                passwordEncoder.encode("Password123!"));
+                admin.setRole(AnalystRole.ADMIN);
+                admin.setEnabled(true);
+
+                Analyst savedAdmin = analystRepository.save(admin);
+
+                mockMvc.perform(
+                                patch(
+                                                "/api/admin/analysts/"
+                                                                + savedAdmin.getId()
+                                                                + "/role")
+                                                .param("role", "ANALYST")
+                                                .with(user("admin").roles("ADMIN"))
+                                                .with(csrf()))
+                                .andExpect(status().isBadRequest());
+
+                Analyst unchangedAdmin = analystRepository
+                                .findById(savedAdmin.getId())
+                                .orElseThrow();
+
+                assertThat(unchangedAdmin.getRole())
+                                .isEqualTo(AnalystRole.ADMIN);
+        }
 }
